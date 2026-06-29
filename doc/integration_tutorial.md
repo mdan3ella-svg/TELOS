@@ -2,7 +2,7 @@ TELOS | Telemetry Lifecycle Orchestration Suite: Operations & Integration Guide
 
 1. Overview
 
-The TELOS Suite is a middleware orchestration layer. It transforms fragmented telemetry into sovereign, validated lifecycle data. This guide details how to integrate TELOS into your existing engineering workstation and external software ecosystems.
+The TELOS Suite is a proprietary middleware orchestration layer. It transforms fragmented telemetry into sovereign, validated lifecycle data. This guide details how to integrate TELOS into your existing engineering workstation and external software ecosystems under the terms of the TELOS Proprietary License Agreement.
 
 2. Integration Workflow: The "How-To"
 
@@ -35,7 +35,6 @@ def telos_normalize(raw_data):
     return { "temp_c": (raw_data['temp_f'] - 32) * 5/9 }
 
 
-
 Closed Loop (Stage 10): Set your predictive maintenance thresholds. TELOS triggers an outbound_webhook to your CMMS (e.g., IBM Maximo) whenever the RUL (Remaining Useful Life) condition is met.
 
 Phase III: Interoperability (Data Out)
@@ -52,9 +51,7 @@ Scenario: An AHU (Air Handling Unit) vibration anomaly is detected.
 
 Ingestion: IoT sensor detects vibration at 1.8mm/s.
 
-Orchestration (TELOS): * The ai_physics node (Stage 8) processes the telemetry against the digital twin model.
-
-It identifies a bearing failure in the specific AHU instance mapped to the BIM GUID.
+Orchestration (TELOS): The ai_physics node (Stage 8) processes the telemetry against the digital twin model. It identifies a bearing failure in the specific AHU instance mapped to the BIM GUID.
 
 Governance (Stage 11): TELOS verifies the anomaly against the ISO-55001 compliance standards defined in the governance model.
 
@@ -70,4 +67,4 @@ Closing: The work order is updated in the BIM viewer (Tandem) to reflect that th
 
 [ ] CI/CD Sync: Verify the telos_config.json is linked to your production Git repository to ensure documentation-to-code parity.
 
-For support, consult the TELOS technical documentation API schema.
+All system configurations, logic, and internal architecture are confidential trade secrets of the TELOS Initiative.
