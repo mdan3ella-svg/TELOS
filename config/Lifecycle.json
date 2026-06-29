@@ -1,0 +1,160 @@
+{
+  "version": "2.0.0",
+  "metadata": {
+    "system_name": "Digital Twin Lifecycle Orchestrator",
+    "last_updated": "2026-06-29T11:42:00Z",
+    "schema_validation": "strict"
+  },
+  "nodes": [
+    {
+      "id": 1,
+      "title": "Project Definition",
+      "slug": "project_definition",
+      "color": "#10B981",
+      "status": "active",
+      "dependencies": [],
+      "description": "Define business objectives, KPIs, stakeholders, and ROI.",
+      "implementation": {
+        "language": "python",
+        "snippet": "KPIs = {'goal': 'Uptime', 'ROI': 'Cost_Reduction'}",
+        "validation_rule": "required_kpis_count > 0"
+      },
+      "educational_rationale": "Alignment with business value is the critical first step to avoid 'vanity' twin projects."
+    },
+    {
+      "id": 2,
+      "title": "Asset Audit",
+      "slug": "asset_audit",
+      "color": "#EC4899",
+      "status": "pending",
+      "dependencies": [1],
+      "description": "Inventory assets, IDs, metadata, and maintenance history.",
+      "implementation": {
+        "language": "sql",
+        "snippet": "SELECT * FROM assets WHERE status = 'operational';",
+        "validation_rule": "assets_count > 0"
+      },
+      "educational_rationale": "Clean master data is the foundation of your digital twin strategy."
+    },
+    {
+      "id": 3,
+      "title": "BIM Integration",
+      "slug": "bim_integration",
+      "color": "#3B82F6",
+      "status": "pending",
+      "dependencies": [2],
+      "description": "Import IFC/Revit and map semantic objects to the digital twin.",
+      "implementation": {
+        "language": "javascript",
+        "snippet": "bim.loadModel('facility_v1.ifc');",
+        "validation_rule": "model_integrity_check == true"
+      },
+      "educational_rationale": "BIM provides the essential spatial anchor for your digital twin context."
+    },
+    {
+      "id": 4,
+      "title": "IoT Connectivity",
+      "slug": "iot_connectivity",
+      "color": "#10B981",
+      "status": "pending",
+      "dependencies": [3],
+      "description": "Connect MQTT, OPC-UA, BACnet, or Modbus sensors.",
+      "implementation": {
+        "language": "python",
+        "snippet": "edge_gateway.publish('building/ahu01/vibration', value);",
+        "validation_rule": "connection_latency < 100ms"
+      },
+      "educational_rationale": "Protocol choice dictates latency and reliability in industrial environments."
+    },
+    {
+      "id": 5,
+      "title": "Data Pipeline",
+      "slug": "data_pipeline",
+      "color": "#EC4899",
+      "status": "pending",
+      "dependencies": [4],
+      "description": "Establish Sensors → Edge → Broker → Data Lake flow.",
+      "implementation": {
+        "language": "python",
+        "snippet": "pipeline.connect('broker.iot.local');",
+        "validation_rule": "throughput_check == stable"
+      },
+      "educational_rationale": "A robust broker like Kafka or MQTT is required for guaranteed message delivery."
+    },
+    {
+      "id": 6,
+      "title": "Normalization",
+      "slug": "normalization",
+      "color": "#3B82F6",
+      "status": "pending",
+      "dependencies": [5],
+      "description": "Standardize units (Celsius/SI), timestamps, and IDs.",
+      "implementation": {
+        "language": "python",
+        "snippet": "def normalize(val): return (val - 32) * 5/9",
+        "validation_rule": "schema_match == true"
+      },
+      "educational_rationale": "Normalization at the Edge prevents downstream data drift in your AI models."
+    },
+    {
+      "id": 7,
+      "title": "Twin Construction",
+      "slug": "twin_construction",
+      "color": "#10B981",
+      "status": "pending",
+      "dependencies": [6],
+      "description": "Structure: Building → Floor → Room → Equipment → Sensor.",
+      "implementation": {
+        "language": "python",
+        "snippet": "digital_twin.update(asset_id, sensor_data);",
+        "validation_rule": "hierarchy_depth == 5"
+      },
+      "educational_rationale": "Strict semantic hierarchies are mandatory for scalable enterprise integration."
+    },
+    {
+      "id": 8,
+      "title": "AI & Physics Simulation",
+      "slug": "ai_physics",
+      "color": "#EC4899",
+      "status": "pending",
+      "dependencies": [7],
+      "description": "Apply ML predictive maintenance and simulation models.",
+      "implementation": {
+        "language": "python",
+        "snippet": "rul = model.predict(sensor_history);",
+        "validation_rule": "prediction_accuracy > 0.85"
+      },
+      "educational_rationale": "Physics-based models explain the 'Why', ML models predict the 'When'."
+    },
+    {
+      "id": 9,
+      "title": "Enterprise Integration",
+      "slug": "enterprise_integration",
+      "color": "#3B82F6",
+      "status": "pending",
+      "dependencies": [8],
+      "description": "Integrate ERP, CMMS, GIS, and BMS systems.",
+      "implementation": {
+        "language": "python",
+        "snippet": "cmms.sync(asset_data, sync_type='bidirectional');",
+        "validation_rule": "sync_status == success"
+      },
+      "educational_rationale": "Twin data is useless if it remains siloed from the work order system."
+    },
+    {
+      "id": 10,
+      "title": "Predictive Closed Loop",
+      "slug": "predictive_closed_loop",
+      "color": "#10B981",
+      "status": "pending",
+      "dependencies": [9],
+      "description": "If RUL < 14, trigger automated work orders.",
+      "implementation": {
+        "language": "python",
+        "snippet": "if rul < 14: create_work_order(asset_id);",
+        "validation_rule": "automated_trigger_enabled == true"
+      },
+      "educational_rationale": "Automated closed-loop action minimizes MTTR (Mean Time to Repair)."
+    }
+  ]
+}
