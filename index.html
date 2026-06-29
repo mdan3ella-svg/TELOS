@@ -6,49 +6,75 @@
     <title>TELOS | Telemetry Lifecycle Orchestration Suite</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-[#0B0F19] text-gray-200 min-h-screen">
+<body class="bg-[#0B0F19] text-gray-200 min-h-screen font-sans">
     <div id="auth-gate" class="fixed inset-0 bg-[#0B0F19] z-50 flex items-center justify-center p-6">
         <div class="bg-[#161C2C] p-8 rounded-lg border border-slate-700 w-full max-w-sm">
             <h2 class="text-white font-bold mb-4">Beta Access Required</h2>
-            <input type="password" id="beta-token" placeholder="Enter Access Token" class="w-full bg-slate-900 border border-slate-700 p-3 rounded mb-4 text-sm">
+            <input type="password" id="beta-token" placeholder="Enter Beta Access Token" class="w-full bg-slate-900 border border-slate-700 p-3 rounded mb-4 text-sm">
             <button onclick="telosApp.init()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase rounded transition">Authenticate</button>
         </div>
     </div>
+
+    <header id="main-header" class="hidden flex justify-between items-center p-6 border-b border-slate-800 bg-[#161C2C]">
+        <div>
+            <h1 class="text-2xl font-bold text-white tracking-widest">TELOS <span class="text-blue-500">| SUITE</span></h1>
+            <p class="text-[10px] text-slate-400 uppercase tracking-widest">v1.0.0-BETA | Build: 2026.06.29</p>
+        </div>
+        <nav class="flex gap-2">
+            <button onclick="telosApp.setView('orchestrator')" class="px-4 py-2 bg-slate-900 hover:bg-slate-700 text-[10px] font-bold uppercase tracking-widest rounded border border-slate-700 transition">Orchestrator</button>
+            <button onclick="telosApp.setView('manual')" class="px-4 py-2 bg-slate-900 hover:bg-slate-700 text-[10px] font-bold uppercase tracking-widest rounded border border-slate-700 transition">Manual</button>
+        </nav>
+    </header>
 
     <main id="app-root" class="p-8"></main>
 
     <script>
         const telosApp = {
             nodes: [],
-            state: { selectedNodeId: 1 },
+            state: { currentView: 'orchestrator', selectedNodeId: 1, authenticated: false },
             
             async init() {
                 const token = document.getElementById('beta-token').value;
+                // In production, validate against your OIDC provider or token list
                 if (token === "TELOS-BETA-2026") {
+                    this.state.authenticated = true;
                     document.getElementById('auth-gate').classList.add('hidden');
-                    // Fetch from local relative path for GitHub Pages
-                    const response = await fetch('./config/Lifecycle.json');
-                    const data = await response.json();
-                    this.nodes = data.nodes;
+                    document.getElementById('main-header').classList.remove('hidden');
+                    await this.fetchRemoteConfig();
                     this.render();
-                } else { alert("Access Denied."); }
+                } else { alert("Invalid Beta Access Token."); }
             },
 
+            async fetchRemoteConfig() {
+                try {
+                    // Replace with your raw GitHub raw-URL for Lifecycle_Definition.json
+                    const response = await fetch('https://raw.githubusercontent.com/YOUR_REPO/main/Lifecycle_Definition.json');
+                    const data = await response.json();
+                    this.nodes = data.nodes;
+                } catch (e) {
+                    // Fallback to internal registry if network sync fails
+                    console.warn("TELOS: Remote sync unavailable. Running localized Beta Registry.");
+                    this.nodes = [{id: 1, title: "Local Registry Loaded", rationale: "System operating in Standalone Beta Mode.", snippet: "sync_mode = 'local';", status: "Operational"}];
+                }
+            },
+
+            setView(view) { this.state.currentView = view; this.render(); },
             selectNode(id) { this.state.selectedNodeId = id; this.render(); },
 
             render() {
+                const root = document.getElementById('app-root');
                 const selected = this.nodes.find(n => n.id === this.state.selectedNodeId) || this.nodes[0];
-                document.getElementById('app-root').innerHTML = `
+                root.innerHTML = this.state.currentView === 'orchestrator' ? `
                     <div class="grid grid-cols-12 gap-8 max-w-7xl mx-auto">
-                        <div class="col-span-4 grid grid-cols-1 gap-2">
-                            ${this.nodes.map(n => `<button onclick="telosApp.selectNode(${n.id})" class="p-4 bg-[#161C2C] border ${this.state.selectedNodeId === n.id ? 'border-blue-500' : 'border-slate-700'} rounded hover:border-blue-500 text-left text-xs uppercase font-bold">${n.title}</button>`).join('')}
+                        <div class="col-span-4 grid grid-cols-2 gap-3">
+                            ${this.nodes.map(n => `<button onclick="telosApp.selectNode(${n.id})" class="text-left bg-[#161C2C] border ${this.state.selectedNodeId === n.id ? 'border-blue-500' : 'border-slate-700'} p-3 rounded hover:border-blue-500 transition"><div class="text-blue-500 text-[9px] font-bold">STAGE ${n.id}</div><div class="text-white text-xs">${n.title}</div></button>`).join('')}
                         </div>
-                        <div class="col-span-8 bg-[#161C2C] p-8 border border-slate-700 rounded">
-                            <h2 class="text-2xl font-bold mb-4 text-blue-400">${selected.title}</h2>
-                            <p class="mb-6 text-sm text-gray-400">${selected.description}</p>
-                            <pre class="bg-black p-4 font-mono text-green-500 text-xs overflow-x-auto">${selected.implementation.snippet}</pre>
+                        <div class="col-span-8 bg-[#161C2C] border border-slate-700 p-8 rounded shadow-xl">
+                            <div class="text-blue-400 text-sm font-bold mb-4">STAGE ${selected.id} | ${selected.title}</div>
+                            <p class="text-gray-300 text-sm mb-6">${selected.rationale || selected.description}</p>
+                            <div class="bg-[#0B0F19] p-4 rounded font-mono text-green-500 text-xs overflow-x-auto">${selected.snippet || selected.implementation.snippet}</div>
                         </div>
-                    </div>`;
+                    </div>` : `...manual content...`;
             }
         };
     </script>
