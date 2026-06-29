@@ -3,109 +3,449 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TELOS | Telemetry Lifecycle Orchestration Suite</title>
+    <title>TELOS | Telemetry Lifecycle Orchestrator</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #070B14;
+            --bg-panel: #101623;
+            --border-dim: #1E293B;
+            --cyan-glow: #06B6D4;
+            --cyan-dim: rgba(6, 182, 212, 0.15);
+        }
+        
+        body { 
+            background-color: var(--bg-dark); 
+            color: #E2E8F0; 
+            font-family: 'Inter', sans-serif; 
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(6, 182, 212, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.03) 0%, transparent 50%);
+            overflow-x: hidden;
+        }
+
+        .glass-panel {
+            background-color: rgba(16, 22, 35, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-dim);
+        }
+        
+        .node-btn {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .node-btn::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; height: 100%; width: 3px;
+            background-color: transparent;
+            transition: background-color 0.3s ease;
+        }
+
+        .node-active { 
+            background-color: rgba(6, 182, 212, 0.05) !important;
+            border-color: rgba(6, 182, 212, 0.5) !important;
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.1);
+        }
+        
+        .node-active::before { background-color: var(--cyan-glow); }
+
+        .svg-container {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes dataFlow {
+            0% { stroke-dashoffset: 100; }
+            100% { stroke-dashoffset: 0; }
+        }
+
+        .flow-line {
+            stroke-dasharray: 4 8;
+            animation: dataFlow 2s linear infinite;
+        }
+
+        .code-block { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
 </head>
-<body class="bg-[#0B0F19] text-gray-200 min-h-screen font-sans">
-    <!-- Auth Gate -->
-    <div id="auth-gate" class="fixed inset-0 bg-[#0B0F19] z-50 flex items-center justify-center p-6">
-        <div class="bg-[#161C2C] p-8 rounded-lg border border-slate-700 w-full max-w-sm">
-            <h2 class="text-white font-bold mb-4">Beta Access Required</h2>
-            <input type="password" id="beta-token" placeholder="Enter Beta Access Token" class="w-full bg-slate-900 border border-slate-700 p-3 rounded mb-4 text-sm">
-            <button onclick="telosApp.init()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase rounded transition">Authenticate</button>
+<body class="min-h-screen flex flex-col">
+
+    <div id="auth-gate" class="fixed inset-0 z-[100] flex items-center justify-center bg-[#070B14] backdrop-blur-md transition-opacity duration-500">
+        <div class="glass-panel p-10 rounded-2xl w-full max-w-md text-center shadow-2xl relative overflow-hidden">
+            <!-- Decorative corner elements -->
+            <div class="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-cyan-500/50 m-4 rounded-tl-lg"></div>
+            <div class="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-cyan-500/50 m-4 rounded-br-lg"></div>
+            
+            <div class="flex justify-center mb-6">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#06B6D4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                </svg>
+            </div>
+            
+            <h1 class="text-3xl font-bold text-white mb-2 tracking-widest">TELOS <span class="text-cyan-500">AUTH</span></h1>
+            <p class="text-slate-400 text-xs uppercase tracking-[0.2em] mb-8">Secure Access Gateway</p>
+            
+            <input type="password" id="beta-token" placeholder="Enter Beta Access Token" class="w-full bg-[#070B14] border border-slate-700 p-4 rounded-lg mb-2 text-sm text-center text-cyan-50 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 focus:outline-none transition-all">
+            <div id="auth-error" class="text-rose-500 text-xs h-4 mb-4 hidden">Invalid Credentials. Access Denied.</div>
+            
+            <button onclick="telosApp.init()" class="w-full py-4 bg-cyan-600/20 border border-cyan-500/50 hover:bg-cyan-600/40 text-cyan-400 hover:text-white text-xs font-bold uppercase tracking-widest rounded-lg transition-all duration-300">
+                Authenticate Session
+            </button>
         </div>
     </div>
 
-    <header id="main-header" class="hidden flex justify-between items-center p-6 border-b border-slate-800 bg-[#161C2C]">
-        <div>
-            <h1 class="text-2xl font-bold text-white tracking-widest">TELOS <span class="text-blue-500">| SUITE</span></h1>
-            <p class="text-[10px] text-slate-400 uppercase tracking-widest">v1.0.0-BETA | Build: 2026.06.29</p>
-        </div>
-    </header>
+    <div id="app-content" class="hidden flex flex-col h-screen overflow-hidden">
+        <header class="flex items-center justify-between px-8 py-5 border-b border-[#1E293B] glass-panel z-10">
+            <div class="flex items-center gap-10">
+                <div class="flex items-center gap-3">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#06B6D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                    <div>
+                        <h1 class="text-xl font-bold text-white tracking-widest leading-tight">TELOS</h1>
+                        <p class="text-[9px] text-cyan-500 uppercase tracking-widest leading-tight">Orchestration Suite</p>
+                    </div>
+                </div>
+                
+                <nav class="flex gap-2">
+                    <button onclick="telosApp.setTab('overview')" id="tab-overview" class="px-5 py-2.5 rounded-md text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-white transition-colors active-tab">Overview</button>
+                    <button onclick="telosApp.setTab('explorer')" id="tab-explorer" class="px-5 py-2.5 rounded-md text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-white transition-colors">Data Explorer</button>
+                    <button onclick="telosApp.setTab('assets')" id="tab-assets" class="px-5 py-2.5 rounded-md text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-white transition-colors">Assets</button>
+                    <button onclick="telosApp.setTab('reports')" id="tab-reports" class="px-5 py-2.5 rounded-md text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-white transition-colors">Reports</button>
+                </nav>
+            </div>
+            
+            <div class="flex items-center gap-6">
+                <div class="flex flex-col items-end">
+                    <div class="text-[10px] text-slate-500 uppercase tracking-widest">Session Status</div>
+                    <div class="text-xs text-emerald-400 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        Encrypted & Active
+                    </div>
+                </div>
+                <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </div>
+            </div>
+        </header>
 
-    <main id="app-root" class="p-8">
-        <div class="text-center text-slate-500 mt-20">Initializing TELOS Orchestrator...</div>
-    </main>
+        <main id="app-root" class="flex-1 overflow-hidden relative"></main>
+    </div>
 
     <script>
         const telosApp = {
-            nodes: [],
-            state: { currentView: 'orchestrator', selectedNodeId: 1 },
-            
-            async init() {
-                const token = document.getElementById('beta-token').value;
-                if (token === "TELOS-BETA-2026") {
-                    this.startSession();
-                    await this.loadData();
-                    this.render();
-                } else { alert("Invalid Beta Access Token."); }
-            },
+            nodes: [
+                {id: 1, title: "Project Definition", status: "success", desc: "Define business objectives, key performance indicators (KPIs), and proprietary ROI models. Establish the scope and data governance framework for the entire digital twin program.", snippet: "{\n  \"goal\": \"Reduce Downtime\",\n  \"ROI\": \"15%\",\n  \"KPIs\": [\"Asset_Uptime_Metric\", \"Predictive_Accuracy\"]\n}"},
+                {id: 2, title: "Asset Audit", status: "success", desc: "Secure inventory of assets and metadata. Establish physical-to-digital baseline mappings.", snippet: "SELECT asset_id, serial_num, type\nFROM facility_assets\nWHERE status = 'operational';"},
+                {id: 3, title: "BIM Integration", status: "success", desc: "Map BIM semantic objects (IFC/Revit) to the operational digital twin spatial hierarchy.", snippet: "const model = bimEngine.load('facility_v1.ifc');\nmodel.mapSemanticNodes();"},
+                {id: 4, title: "IoT Connectivity", status: "warning", desc: "Establish encrypted telemetry ingestion pipelines via secure MQTT/AMQP edge gateways.", snippet: "edgeGateway.connect({\n  protocol: 'MQTT',\n  tls: true,\n  topic: 'building/ahu01/vibration'\n});"},
+                {id: 5, title: "Data Pipeline", status: "success", desc: "Configure validated sensor-to-twin data flows ensuring sub-second latency.", snippet: "pipeline.createStream('raw_telemetry')\n  .routeTo('message_broker_01');"},
+                {id: 6, title: "Normalization", status: "success", desc: "Standardize raw telemetry variables into absolute SI sovereign units to prevent downstream drift.", snippet: "function normalize(payload) {\n  return payload.map(val => (val.tempF - 32) * (5/9));\n}"},
+                {id: 7, title: "Twin Construction", status: "warning", desc: "Assemble the proprietary digital twin hierarchy associating live streams with semantic metadata.", snippet: "digitalTwin.constructTree({\n  root: 'Facility_A',\n  children: mappedAssets\n});"},
+                {id: 8, title: "AI & Physics", status: "success", desc: "Execute confidential physics-informed neural networks for predictive maintenance analytics.", snippet: "const rul = predictiveModel.execute({\n  model: 'LSTM_Vibration_V3',\n  history: sensorData7d\n});"},
+                {id: 9, title: "Enterprise Integration", status: "success", desc: "Establish secure bidirectional synchronization with enterprise CMMS and ERP ecosystems.", snippet: "cmms.authenticate('PROPRIETARY_KEY');\ncmms.syncState(digitalTwin.export());"},
+                {id: 10, title: "Predictive Closed Loop", status: "pending", desc: "Enable automated, policy-driven work order triggering based on anomaly thresholds.", snippet: "if (rul.daysLeft < 14 && anomalyScore > 0.85) {\n  cmms.triggerWorkOrder(assetId, 'Urgent');\n}"},
+                {id: 11, title: "Continuous Governance", status: "pending", desc: "Ongoing compliance verification and predictive model drift detection scanning.", snippet: "auditService.verifyCompliance(twinState, {\n  standard: 'ISO-55001'\n});"},
+                {id: 12, title: "Twin Retirement", status: "pending", desc: "Secure decommissioning of assets and AES-256 encrypted archival of lifecycle history.", snippet: "archiveEngine.store(twinHistory, {\n  encryption: 'AES-256-GCM',\n  retention: '7_YEARS'\n});"}
+            ],
+            state: { activeTab: 'overview', selectedNodeId: 1 },
 
-            startSession() {
-                localStorage.setItem('telos_auth_ts', Date.now().toString());
-                document.getElementById('auth-gate').classList.add('hidden');
-                document.getElementById('main-header').classList.remove('hidden');
+            init() {
+                const token = document.getElementById('beta-token').value;
+                const errorBox = document.getElementById('auth-error');
+                
+                if (token === "TELOS-BETA-2026") {
+                    errorBox.classList.add('hidden');
+                    localStorage.setItem('telos_auth_ts', Date.now().toString());
+                    
+                    document.getElementById('auth-gate').style.opacity = '0';
+                    setTimeout(() => {
+                        document.getElementById('auth-gate').classList.add('hidden');
+                        document.getElementById('app-content').classList.remove('hidden');
+                        this.render();
+                    }, 500);
+                } else { 
+                    errorBox.classList.remove('hidden');
+                    document.getElementById('beta-token').classList.add('border-rose-500');
+                }
             },
 
             checkSession() {
                 const ts = localStorage.getItem('telos_auth_ts');
                 if (!ts || (Date.now() - parseInt(ts) > 30 * 60 * 1000)) {
                     document.getElementById('auth-gate').classList.remove('hidden');
-                    document.getElementById('main-header').classList.add('hidden');
+                    document.getElementById('auth-gate').style.opacity = '1';
+                    document.getElementById('app-content').classList.add('hidden');
                     return false;
                 }
                 return true;
             },
 
-            async loadData() {
-                // Fallback architecture: Priority to saved state, then fetch
-                const savedNodes = localStorage.getItem('telos_nodes');
-                if (savedNodes) {
-                    this.nodes = JSON.parse(savedNodes);
-                } else {
-                    // Placeholder for your actual local config path
-                    try {
-                        const response = await fetch('./config/Lifecycle.json');
-                        this.nodes = (await response.json()).nodes;
-                        localStorage.setItem('telos_nodes', JSON.stringify(this.nodes));
-                    } catch (e) {
-                        console.error("Fetch failed, using minimal registry.");
-                        this.nodes = [{id: 1, title: "Registry Loaded", description: "Standalone Mode."}];
+            setTab(tab) { 
+                this.state.activeTab = tab; 
+                this.render(); 
+            },
+
+            selectNode(id) { 
+                this.state.selectedNodeId = id; 
+                this.render(); 
+            },
+
+            drawSVGStreams() {
+                if(this.state.activeTab !== 'overview') return;
+                
+                const svg = document.getElementById('stream-canvas');
+                if (!svg) return;
+                svg.innerHTML = ''; // Clear previous
+                
+                const source = document.getElementById('data-hub');
+                const nodes = document.querySelectorAll('.stage-node');
+                if (!source || nodes.length === 0) return;
+
+                const svgRect = svg.getBoundingClientRect();
+                const sourceRect = source.getBoundingClientRect();
+                
+                // Calculate origin point (center of the data hub icon)
+                const startX = sourceRect.right - svgRect.left - 10;
+                const startY = sourceRect.top + (sourceRect.height / 2) - svgRect.top;
+
+                nodes.forEach(node => {
+                    const nodeRect = node.getBoundingClientRect();
+                    const endX = nodeRect.left - svgRect.left;
+                    const endY = nodeRect.top + (nodeRect.height / 2) - svgRect.top;
+                    
+                    const controlX1 = startX + (endX - startX) * 0.4;
+                    const controlY1 = startY;
+                    const controlX2 = startX + (endX - startX) * 0.6;
+                    const controlY2 = endY;
+
+                    const pathString = `M ${startX} ${startY} C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${endX} ${endY}`;
+                    
+                    // Background path
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d', pathString);
+                    path.setAttribute('fill', 'none');
+                    path.setAttribute('stroke', '#1E293B');
+                    path.setAttribute('stroke-width', '1.5');
+                    svg.appendChild(path);
+
+                    // Active glow path
+                    const isActive = node.classList.contains('node-active');
+                    if (isActive) {
+                        const activePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        activePath.setAttribute('d', pathString);
+                        activePath.setAttribute('fill', 'none');
+                        activePath.setAttribute('stroke', '#06B6D4');
+                        activePath.setAttribute('stroke-width', '2');
+                        
+                        // Adding gradient definition for the active line
+                        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                        const linearGradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+                        linearGradient.setAttribute('id', 'lineGrad');
+                        linearGradient.innerHTML = `<stop offset="0%" stop-color="#1E293B" /><stop offset="100%" stop-color="#06B6D4" />`;
+                        defs.appendChild(linearGradient);
+                        svg.appendChild(defs);
+                        activePath.setAttribute('stroke', 'url(#lineGrad)');
+                        
+                        svg.appendChild(activePath);
+
+                        // Data flow animation
+                        const flowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        flowPath.setAttribute('d', pathString);
+                        flowPath.setAttribute('fill', 'none');
+                        flowPath.setAttribute('stroke', '#FFFFFF');
+                        flowPath.setAttribute('stroke-width', '2');
+                        flowPath.classList.add('flow-line');
+                        svg.appendChild(flowPath);
                     }
-                }
+                });
             },
 
             render() {
                 if(!this.checkSession()) return;
                 const root = document.getElementById('app-root');
-                const selected = this.nodes.find(n => n.id === this.state.selectedNodeId) || this.nodes[0];
-                root.innerHTML = `
-                    <div class="grid grid-cols-12 gap-8 max-w-7xl mx-auto">
-                        <div class="col-span-4 grid grid-cols-1 gap-2">
-                            ${this.nodes.map(n => `<button onclick="telosApp.selectNode(${n.id})" class="text-left bg-[#161C2C] border ${this.state.selectedNodeId === n.id ? 'border-blue-500' : 'border-slate-700'} p-4 rounded hover:border-blue-500 transition"><div class="text-white text-sm font-bold">${n.title}</div></button>`).join('')}
-                        </div>
-                        <div class="col-span-8 bg-[#161C2C] border border-slate-700 p-8 rounded shadow-xl">
-                            <h2 class="text-blue-400 text-xl font-bold mb-4">${selected.title}</h2>
-                            <p class="text-gray-300 text-sm mb-6">${selected.description}</p>
-                            <div class="bg-[#0B0F19] p-4 rounded font-mono text-green-500 text-xs overflow-x-auto">${selected.snippet || 'No implementation data.'}</div>
-                        </div>
-                    </div>`;
-            },
+                
+                // Update Navigation Styling
+                ['overview', 'explorer', 'assets', 'reports'].forEach(tab => {
+                    const btn = document.getElementById(`tab-${tab}`);
+                    if(tab === this.state.activeTab) {
+                        btn.classList.add('bg-cyan-500/10', 'text-cyan-400', 'border', 'border-cyan-500/30');
+                        btn.classList.remove('text-slate-400');
+                    } else {
+                        btn.classList.remove('bg-cyan-500/10', 'text-cyan-400', 'border', 'border-cyan-500/30');
+                        btn.classList.add('text-slate-400');
+                    }
+                });
 
-            selectNode(id) { 
-                this.state.selectedNodeId = id; 
-                localStorage.setItem('telos_state', JSON.stringify(this.state));
-                this.render(); 
+                const getStatusIcon = (status) => {
+                    if(status === 'success') return `<svg class="w-3 h-3 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>`;
+                    if(status === 'warning') return `<svg class="w-3 h-3 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>`;
+                    return `<svg class="w-3 h-3 text-slate-500" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8"></circle></svg>`;
+                };
+
+                switch(this.state.activeTab) {
+                    case 'overview':
+                        const selected = this.nodes.find(n => n.id === this.state.selectedNodeId);
+                        root.innerHTML = `
+                            <svg id="stream-canvas" class="svg-container"></svg>
+                            <div class="h-full w-full p-8 flex items-center justify-between gap-12 relative z-10">
+                                
+                                <!-- Central Data Hub -->
+                                <div class="w-24 flex-shrink-0 flex justify-center">
+                                    <div id="data-hub" class="w-16 h-16 rounded-full border-2 border-cyan-500/50 bg-[#101623] flex items-center justify-center shadow-[0_0_30px_rgba(6,182,212,0.2)]">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#06B6D4" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+                                    </div>
+                                </div>
+
+                                <!-- The 12 Stages Column -->
+                                <div class="flex-shrink-0 w-80 h-full overflow-y-auto pr-4 flex flex-col gap-2">
+                                    ${this.nodes.map(n => `
+                                        <button onclick="telosApp.selectNode(${n.id})" class="stage-node node-btn w-full px-4 py-3 bg-[#101623] border border-slate-800 rounded-lg text-left flex items-center justify-between ${this.state.selectedNodeId === n.id ? 'node-active' : 'hover:border-slate-600'}">
+                                            <div class="flex items-center gap-3">
+                                                <span class="text-xs font-mono text-cyan-600 w-4">${n.id}</span>
+                                                <span class="text-sm text-slate-200 font-semibold tracking-wide">${n.title}</span>
+                                            </div>
+                                            <div class="flex gap-2">
+                                                ${getStatusIcon(n.status)}
+                                                ${n.status === 'success' || n.status === 'warning' ? `<svg class="w-3 h-3 text-emerald-500/50" fill="currentColor" viewBox="0 0 20 20"><circle cx="10" cy="10" r="4"></circle></svg>` : ''}
+                                            </div>
+                                        </button>
+                                    `).join('')}
+                                </div>
+
+                                <!-- Detail / Implementation Pane -->
+                                <div class="flex-1 h-full max-w-3xl glass-panel p-8 rounded-xl shadow-2xl flex flex-col border border-slate-700/50 relative">
+                                    <div class="absolute top-0 right-0 p-4 opacity-10">
+                                        <span class="text-6xl font-bold font-mono">0${selected.id}</span>
+                                    </div>
+                                    
+                                    <div class="flex items-center gap-4 mb-6">
+                                        <div class="w-12 h-12 rounded bg-cyan-900/30 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold font-mono text-xl">${selected.id}</div>
+                                        <div>
+                                            <h2 class="text-cyan-400 text-2xl font-bold tracking-wide">STAGE ${selected.id}: ${selected.title}</h2>
+                                            <p class="text-slate-500 text-xs uppercase tracking-widest mt-1">Lifecycle Orchestration Protocol</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="bg-[#070B14] border border-slate-800 p-6 rounded-lg mb-6 shadow-inner">
+                                        <p class="text-slate-300 text-sm leading-relaxed">${selected.desc}</p>
+                                    </div>
+
+                                    <h3 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3 ml-1">Sample Implementation (JSON/Code)</h3>
+                                    <div class="flex-1 bg-[#070B14] border border-slate-800 rounded-lg p-5 overflow-y-auto shadow-inner relative group">
+                                        <div class="absolute top-3 right-3 text-[9px] font-mono text-slate-600 border border-slate-700 px-2 py-1 rounded bg-[#101623]">SECURE_ENV</div>
+                                        <pre class="code-block text-emerald-400 text-[13px] leading-relaxed whitespace-pre-wrap">${selected.snippet}</pre>
+                                    </div>
+                                </div>
+                            </div>`;
+                        
+                        // Use timeout to ensure DOM is rendered before calculating SVG positions
+                        setTimeout(() => this.drawSVGStreams(), 0);
+                        break;
+                        
+                    case 'explorer':
+                        root.innerHTML = `
+                            <div class="p-8 h-full">
+                                <div class="glass-panel p-6 rounded-xl border border-slate-700 h-full flex flex-col">
+                                    <h3 class="text-white font-bold text-lg mb-6 flex items-center gap-3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#06B6D4" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg> Live Telemetry Stream</h3>
+                                    <div class="flex-1 bg-[#070B14] rounded-lg border border-slate-800 overflow-hidden flex flex-col">
+                                        <table class="w-full text-sm text-left text-slate-400">
+                                            <thead class="text-xs text-slate-500 uppercase bg-[#101623] border-b border-slate-800">
+                                                <tr><th class="px-6 py-4">Timestamp</th><th class="px-6 py-4">Asset ID</th><th class="px-6 py-4">Metric</th><th class="px-6 py-4">Value</th><th class="px-6 py-4">Status</th></tr>
+                                            </thead>
+                                            <tbody>
+                                                ${[1,2,3,4,5,6].map(i => `
+                                                <tr class="border-b border-slate-800/50 hover:bg-[#101623]/50 transition-colors">
+                                                    <td class="px-6 py-4 font-mono text-xs">2026-06-29T14:15:${10+i}Z</td>
+                                                    <td class="px-6 py-4 text-cyan-400 font-medium">AHU-0${i}</td>
+                                                    <td class="px-6 py-4">Vibration Axis-Z</td>
+                                                    <td class="px-6 py-4 font-mono">${(1.2 + i*0.1).toFixed(2)} mm/s</td>
+                                                    <td class="px-6 py-4"><span class="px-2 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded text-[10px] font-bold uppercase tracking-wider">Optimal</span></td>
+                                                </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>`;
+                        break;
+                    
+                    case 'assets':
+                        root.innerHTML = `
+                            <div class="p-8 h-full overflow-y-auto">
+                                <h3 class="text-white font-bold text-lg mb-6">Registered Twin Assets</h3>
+                                <div class="grid grid-cols-4 gap-6">
+                                    ${this.nodes.slice(0,8).map(n => `
+                                    <div class="glass-panel p-6 border border-slate-700 rounded-xl hover:border-cyan-500/50 transition-colors cursor-pointer group">
+                                        <div class="w-10 h-10 bg-[#070B14] rounded border border-slate-800 flex items-center justify-center mb-4 group-hover:border-cyan-500/30">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06B6D4" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                                        </div>
+                                        <h4 class="text-white font-semibold mb-1">Facility Asset 0${n.id}</h4>
+                                        <p class="text-slate-500 text-xs mb-3">ID: GUID-8F3${n.id}B-99</p>
+                                        <div class="w-full bg-[#070B14] rounded-full h-1.5"><div class="bg-emerald-500 h-1.5 rounded-full" style="width: ${80 + n.id}%"></div></div>
+                                        <div class="mt-2 text-[9px] text-right text-emerald-500 font-mono">HEALTH ${80 + n.id}%</div>
+                                    </div>
+                                    `).join('')}
+                                </div>
+                            </div>`;
+                        break;
+                        
+                    case 'reports':
+                        root.innerHTML = `
+                            <div class="p-8 h-full">
+                                <div class="grid grid-cols-3 gap-6 h-full">
+                                    <div class="glass-panel p-8 rounded-xl border border-slate-700 flex flex-col justify-center items-center text-center">
+                                        <h3 class="text-slate-400 text-sm font-bold uppercase tracking-widest mb-4">System Availability</h3>
+                                        <div class="relative w-40 h-40 flex items-center justify-center">
+                                            <svg class="transform -rotate-90 w-full h-full"><circle cx="80" cy="80" r="70" stroke="#1E293B" stroke-width="8" fill="none" /><circle cx="80" cy="80" r="70" stroke="#06B6D4" stroke-width="8" fill="none" stroke-dasharray="440" stroke-dashoffset="10" stroke-linecap="round" /></svg>
+                                            <div class="absolute text-4xl font-bold text-white">99.9<span class="text-sm text-cyan-500">%</span></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-span-2 glass-panel p-8 rounded-xl border border-slate-700 flex flex-col">
+                                        <h3 class="text-white font-bold text-lg mb-2">Predictive Maintenance Yield</h3>
+                                        <p class="text-slate-500 text-sm mb-8">ROI analysis based on Stage 1 configurations.</p>
+                                        <div class="flex-1 bg-[#070B14] rounded-lg border border-slate-800 p-6 flex items-end gap-4">
+                                            ${[30, 45, 60, 50, 75, 85, 95].map(h => `<div class="w-full bg-cyan-900/30 rounded-t relative group"><div class="absolute bottom-0 w-full bg-cyan-500 rounded-t transition-all duration-1000" style="height: ${h}%"></div></div>`).join('')}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>`;
+                        break;
+                }
             }
         };
 
         window.onload = () => {
-            const savedState = localStorage.getItem('telos_state');
-            if (savedState) telosApp.state = JSON.parse(savedState);
-            if (telosApp.checkSession()) {
-                telosApp.loadData().then(() => telosApp.render());
+            localStorage.removeItem('telos_auth_ts');
+            
+            if(telosApp.checkSession()) {
+                document.getElementById('auth-gate').classList.add('hidden');
+                document.getElementById('app-content').classList.remove('hidden');
+                telosApp.render();
             }
         };
+
+        // Redraw SVG lines on window resize for responsiveness
+        window.addEventListener('resize', () => {
+            if(telosApp.state.activeTab === 'overview') {
+                telosApp.drawSVGStreams();
+            }
+        });
+
+        // 60-second background session check
+        setInterval(() => { if(!telosApp.checkSession()) location.reload(); }, 60000);
     </script>
 </body>
 </html>
