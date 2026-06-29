@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TELOS | Telemetry Lifecycle Orchestration Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#0B0F19] text-gray-200 min-h-screen">
+    <div id="auth-gate" class="fixed inset-0 bg-[#0B0F19] z-50 flex items-center justify-center p-6">
+        <div class="bg-[#161C2C] p-8 rounded-lg border border-slate-700 w-full max-w-sm">
+            <h2 class="text-white font-bold mb-4">Beta Access Required</h2>
+            <input type="password" id="beta-token" placeholder="Enter Access Token" class="w-full bg-slate-900 border border-slate-700 p-3 rounded mb-4 text-sm">
+            <button onclick="telosApp.init()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase rounded transition">Authenticate</button>
+        </div>
+    </div>
+
+    <main id="app-root" class="p-8"></main>
+
+    <script>
+        const telosApp = {
+            nodes: [],
+            state: { selectedNodeId: 1 },
+            
+            async init() {
+                const token = document.getElementById('beta-token').value;
+                if (token === "TELOS-BETA-2026") {
+                    document.getElementById('auth-gate').classList.add('hidden');
+                    // Fetch from local relative path for GitHub Pages
+                    const response = await fetch('./config/Lifecycle.json');
+                    const data = await response.json();
+                    this.nodes = data.nodes;
+                    this.render();
+                } else { alert("Access Denied."); }
+            },
+
+            selectNode(id) { this.state.selectedNodeId = id; this.render(); },
+
+            render() {
+                const selected = this.nodes.find(n => n.id === this.state.selectedNodeId) || this.nodes[0];
+                document.getElementById('app-root').innerHTML = `
+                    <div class="grid grid-cols-12 gap-8 max-w-7xl mx-auto">
+                        <div class="col-span-4 grid grid-cols-1 gap-2">
+                            ${this.nodes.map(n => `<button onclick="telosApp.selectNode(${n.id})" class="p-4 bg-[#161C2C] border ${this.state.selectedNodeId === n.id ? 'border-blue-500' : 'border-slate-700'} rounded hover:border-blue-500 text-left text-xs uppercase font-bold">${n.title}</button>`).join('')}
+                        </div>
+                        <div class="col-span-8 bg-[#161C2C] p-8 border border-slate-700 rounded">
+                            <h2 class="text-2xl font-bold mb-4 text-blue-400">${selected.title}</h2>
+                            <p class="mb-6 text-sm text-gray-400">${selected.description}</p>
+                            <pre class="bg-black p-4 font-mono text-green-500 text-xs overflow-x-auto">${selected.implementation.snippet}</pre>
+                        </div>
+                    </div>`;
+            }
+        };
+    </script>
+</body>
+</html>
