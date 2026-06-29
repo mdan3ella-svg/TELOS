@@ -1,19 +1,17 @@
 TELOS | Telemetry Lifecycle Orchestration Suite
 
-The TELOS Suite is a professional-grade, proprietary middleware orchestration layer designed to transform fragmented facility telemetry into sovereign, validated lifecycle data, aligning with ISO-55001 standards.
+Project Definition
 
-Project Structure
+TELOS is a proprietary, 12-stage middleware orchestration engine designed to transform fragmented industrial telemetry into sovereign, validated lifecycle data.
 
-/config: Configuration schemas for lifecycle orchestration.
+Deployment Structure
 
-/docs: Documentation for system integration and Beta analysis.
+/config: Configuration schema and orchestration logic.
 
-index.html: The core operational dashboard.
+/docs: Integration manuals and participant invitations.
 
-Beta Analysis
+index.html: The core administrative interface.
 
-This repository is currently in Beta Analysis Phase. Access is gated by an authentication token. For Beta access requests, please refer to the /docs/beta_invitation.md.
+Proprietary Notice
 
-License
-
-© 2026 TELOS Initiative. All rights reserved. This software and its associated documentation are the intellectual property of the TELOS Initiative. Unauthorized reproduction, distribution, modification, decompilation, or reverse engineering is strictly prohibited.
+This project is under a restricted license (see LICENSE). All orchestration logic, algorithms, and schemas are confidential trade secrets of the TELOS Initiative.
